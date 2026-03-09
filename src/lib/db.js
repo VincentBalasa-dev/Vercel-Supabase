@@ -37,9 +37,11 @@ export async function toggleHabitOrChore({ key, value, date, type }) {
   const { data: existing } = await supabase.from(table).select('id').eq('user_id', UID).eq('date', date).maybeSingle()
 
   if (existing) {
-    await supabase.from(table).update({ [key]: value }).eq('id', existing.id)
+    const { error } = await supabase.from(table).update({ [key]: value }).eq('id', existing.id)
+    if (error) throw error
   } else {
-    await supabase.from(table).insert({ user_id: UID, date, [key]: value })
+    const { error } = await supabase.from(table).insert({ user_id: UID, date, [key]: value })
+    if (error) throw error
   }
 }
 

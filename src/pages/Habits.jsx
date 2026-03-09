@@ -24,6 +24,7 @@ export default function Habits() {
   const [habits, setHabits] = useState({})
   const [chores, setChores] = useState({})
   const [loading, setLoading] = useState(true)
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -42,8 +43,10 @@ export default function Habits() {
     setHabits(prev => ({ ...prev, [key]: newVal }))
     try {
       await toggleHabitOrChore({ key, value: newVal, date: today(), type: 'habit' })
-    } catch {
+      setSaveError('')
+    } catch (err) {
       setHabits(prev => ({ ...prev, [key]: !newVal }))
+      setSaveError(err?.message || 'Failed to save — check Supabase RLS settings')
     }
   }
 
@@ -52,8 +55,10 @@ export default function Habits() {
     setChores(prev => ({ ...prev, [key]: newVal }))
     try {
       await toggleHabitOrChore({ key, value: newVal, date: today(), type: 'chore' })
-    } catch {
+      setSaveError('')
+    } catch (err) {
       setChores(prev => ({ ...prev, [key]: !newVal }))
+      setSaveError(err?.message || 'Failed to save — check Supabase RLS settings')
     }
   }
 
@@ -66,6 +71,12 @@ export default function Habits() {
         <h1 className="text-xl font-bold text-white">Habits & Chores</h1>
         <p className="text-gray-400 text-sm">{formatDate(today())}</p>
       </div>
+
+      {saveError && (
+        <div className="px-4 py-3 rounded-xl text-sm text-red-300 bg-red-900/40 border border-red-700">
+          {saveError}
+        </div>
+      )}
 
       {/* Habits */}
       <Card>
