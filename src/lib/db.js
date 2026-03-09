@@ -7,8 +7,8 @@ export async function getHabitsToday() {
   const today = new Date().toISOString().split('T')[0]
 
   const [{ data: habit }, { data: chore }, { data: recent }] = await Promise.all([
-    supabase.from('habits').select('*').eq('user_id', UID).eq('date', today).single(),
-    supabase.from('chores').select('*').eq('user_id', UID).eq('date', today).single(),
+    supabase.from('habits').select('*').eq('user_id', UID).eq('date', today).maybeSingle(),
+    supabase.from('chores').select('*').eq('user_id', UID).eq('date', today).maybeSingle(),
     supabase.from('habits').select('date, workout, study, read').eq('user_id', UID).order('date', { ascending: false }).limit(30),
   ])
 
@@ -34,7 +34,7 @@ export async function getHabitsToday() {
 
 export async function toggleHabitOrChore({ key, value, date, type }) {
   const table = type === 'chore' ? 'chores' : 'habits'
-  const { data: existing } = await supabase.from(table).select('id').eq('user_id', UID).eq('date', date).single()
+  const { data: existing } = await supabase.from(table).select('id').eq('user_id', UID).eq('date', date).maybeSingle()
 
   if (existing) {
     await supabase.from(table).update({ [key]: value }).eq('id', existing.id)
@@ -68,7 +68,7 @@ export async function getWorkoutLatest() {
     .eq('date', today)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!session) return { session: null }
   const total = session.workout_exercises?.length || 0
@@ -90,7 +90,7 @@ export async function saveWorkoutSession({ name, type, date, exercises, note }) 
     .from('workout_sessions')
     .insert({ user_id: UID, name, type, date, note })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) throw error
 
@@ -120,7 +120,7 @@ export async function getDietLogs(date) {
 }
 
 export async function getDietGoals() {
-  const { data } = await supabase.from('diet_goals').select('*').eq('user_id', UID).single()
+  const { data } = await supabase.from('diet_goals').select('*').eq('user_id', UID).maybeSingle()
   return data || null
 }
 
@@ -137,7 +137,7 @@ export async function saveDietLog({ food_name, calories, protein, carbs, fat, da
       date,
     })
     .select()
-    .single()
+    .maybeSingle()
   if (error) throw error
   return data
 }
@@ -147,7 +147,7 @@ export async function deleteDietLog(id) {
 }
 
 export async function saveDietGoals({ calories, protein, carbs, fat }) {
-  const { data: existing } = await supabase.from('diet_goals').select('id').eq('user_id', UID).single()
+  const { data: existing } = await supabase.from('diet_goals').select('id').eq('user_id', UID).maybeSingle()
   if (existing) {
     await supabase.from('diet_goals').update({ calories, protein, carbs, fat }).eq('id', existing.id)
   } else {
@@ -158,7 +158,7 @@ export async function saveDietGoals({ calories, protein, carbs, fat }) {
 export async function getDietSummary(date) {
   const [{ data: logs }, { data: goals }] = await Promise.all([
     supabase.from('diet_logs').select('calories, protein_g, carbs_g, fat_g').eq('user_id', UID).eq('date', date),
-    supabase.from('diet_goals').select('*').eq('user_id', UID).single(),
+    supabase.from('diet_goals').select('*').eq('user_id', UID).maybeSingle(),
   ])
 
   const totals = (logs || []).reduce(
@@ -226,7 +226,7 @@ export async function saveFinanceEntry({ type, amount, note, date }) {
     .from('finance_entries')
     .insert({ user_id: UID, type, amount: Number(amount), note, date })
     .select()
-    .single()
+    .maybeSingle()
   if (error) throw error
   return data
 }
