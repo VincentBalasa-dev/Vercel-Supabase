@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Dumbbell, Utensils, Wallet, BookOpen, Code, CheckSquare, Flame, Bell } from 'lucide-react'
 
 import { getHabitsToday, getDietSummary, getFinanceSummary, getWorkoutLatest } from '../lib/db'
+import { supabase } from '../lib/supabase'
 import { greet, today, formatCurrency } from '../lib/utils'
 import Card from '../components/ui/Card'
 import ProgressBar from '../components/ui/ProgressBar'
@@ -22,8 +23,15 @@ export default function Dashboard() {
   const [finance, setFinance] = useState(null)
   const [workout, setWorkout] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [dbStatus, setDbStatus] = useState('checking')
 
   const displayName = 'Angelo'
+
+  useEffect(() => {
+    supabase.from('habits').select('id').limit(1)
+      .then(({ error }) => setDbStatus(error ? 'error' : 'ok'))
+      .catch(() => setDbStatus('error'))
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -57,9 +65,15 @@ export default function Dashboard() {
           <p className="text-gray-400 text-sm">{greet('')}</p>
           <h1 className="text-xl font-bold text-white capitalize">{displayName}</h1>
         </div>
-        <button className="w-10 h-10 rounded-full flex items-center justify-center relative" style={{ backgroundColor: '#161b22' }}>
-          <Bell size={18} className="text-gray-400" />
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ backgroundColor: '#161b22' }}>
+            <span className={`w-2 h-2 rounded-full ${dbStatus === 'ok' ? 'bg-green-400' : dbStatus === 'error' ? 'bg-red-400' : 'bg-yellow-400 animate-pulse'}`} />
+            <span className="text-xs text-gray-400">{dbStatus === 'ok' ? 'Supabase' : dbStatus === 'error' ? 'Offline' : '...'}</span>
+          </div>
+          <button className="w-10 h-10 rounded-full flex items-center justify-center relative" style={{ backgroundColor: '#161b22' }}>
+            <Bell size={18} className="text-gray-400" />
+          </button>
+        </div>
       </div>
 
       {/* Daily Streaks */}
