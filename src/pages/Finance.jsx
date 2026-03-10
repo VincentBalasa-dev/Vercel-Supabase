@@ -90,7 +90,6 @@ export default function Finance() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         {TYPES.map(({ value, label, icon: Icon, color, bg }) => {
-          const key = `total_${value}${value === 'income' ? '' : 's'}`
           const amount = summary[`total_${value}`] || summary[`total_${value}s`] || 0
           return (
             <Card key={value} className="flex flex-col gap-1">

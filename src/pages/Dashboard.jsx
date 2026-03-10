@@ -55,14 +55,14 @@ export default function Dashboard() {
     load()
   }, [])
 
-  const calPct = dietSummary ? Math.round((dietSummary.calories_consumed / dietSummary.calories_goal) * 100) : 0
+  const calPct = dietSummary ? Math.min(Math.round((dietSummary.calories_consumed / dietSummary.calories_goal) * 100), 100) : 0
 
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-400 text-sm">{greet('')}</p>
+          <p className="text-gray-400 text-sm">{greet(displayName)}</p>
           <h1 className="text-xl font-bold text-white capitalize">{displayName}</h1>
         </div>
         <div className="flex items-center gap-2">

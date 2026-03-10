@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, ChevronRight, Dumbbell, Zap, Wind, Target, Activity } from 'lucide-react'
 import { getWorkoutWeek, getWorkoutRecent, saveWorkoutSession } from '../lib/db'
-import { getWeekDays, today } from '../lib/utils'
+import { getWeekDays, today, formatDate } from '../lib/utils'
 import Card from '../components/ui/Card'
 
 const CATEGORIES = [
@@ -153,7 +153,7 @@ export default function Workout() {
                 <Card key={session.id}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold uppercase tracking-wider" style={{ color: cat.color }}>{session.type} Day</span>
-                    <span className="text-xs text-gray-500">{session.date}</span>
+                    <span className="text-xs text-gray-500">{formatDate(session.date)}</span>
                   </div>
                   <p className="text-sm font-semibold text-white">{session.name}</p>
                   {session.note && <p className="text-xs text-gray-400 mt-1 italic">"{session.note}"</p>}

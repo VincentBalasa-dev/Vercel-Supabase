@@ -18,7 +18,7 @@ export default function Diet() {
   const [showAdd, setShowAdd] = useState(false)
   const [showGoals, setShowGoals] = useState(false)
   const [form, setForm] = useState({ food_name: '', calories: '', protein: '', carbs: '', fat: '' })
-  const [goalForm, setGoalForm] = useState({})
+  const [goalForm, setGoalForm] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 65 })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
