@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Utensils, Target, Trash2 } from 'lucide-react'
+import { Plus, Utensils, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getDietLogs, getDietGoals, saveDietLog, deleteDietLog, saveDietGoals } from '../lib/db'
 import { today, formatDate } from '../lib/utils'
 import Card from '../components/ui/Card'
@@ -7,12 +7,19 @@ import ProgressBar from '../components/ui/ProgressBar'
 import CircularProgress from '../components/ui/CircularProgress'
 
 const MACROS = [
-  { key: 'protein', label: 'Protein', color: 'bg-blue-500', ring: '#3b82f6', unit: 'g' },
-  { key: 'carbs', label: 'Carbs', color: 'bg-yellow-400', ring: '#facc15', unit: 'g' },
-  { key: 'fat', label: 'Fat', color: 'bg-red-400', ring: '#f87171', unit: 'g' },
+  { key: 'protein', label: 'Protein', color: 'bg-blue-500', unit: 'g' },
+  { key: 'carbs', label: 'Carbs', color: 'bg-yellow-400', unit: 'g' },
+  { key: 'fat', label: 'Fat', color: 'bg-red-400', unit: 'g' },
 ]
 
+function offsetDate(date, days) {
+  const d = new Date(date + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
 export default function Diet() {
+  const [selectedDate, setSelectedDate] = useState(today())
   const [logs, setLogs] = useState([])
   const [goals, setGoals] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 65 })
   const [showAdd, setShowAdd] = useState(false)
@@ -22,17 +29,24 @@ export default function Diet() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    load()
+    loadGoals()
   }, [])
 
-  async function load() {
+  useEffect(() => {
+    loadLogs()
+  }, [selectedDate])
+
+  async function loadGoals() {
     try {
-      const [l, g] = await Promise.all([
-        getDietLogs(today()),
-        getDietGoals(),
-      ])
-      setLogs(l)
+      const g = await getDietGoals()
       if (g) { setGoals(g); setGoalForm(g) }
+    } catch { /* empty */ }
+  }
+
+  async function loadLogs() {
+    try {
+      const l = await getDietLogs(selectedDate)
+      setLogs(l)
     } catch { /* empty */ }
   }
 
@@ -45,15 +59,16 @@ export default function Diet() {
 
   const calPct = Math.min(Math.round((totals.calories / goals.calories) * 100), 100)
   const calLeft = goals.calories - totals.calories
+  const isToday = selectedDate === today()
 
   async function addFood() {
     if (!form.food_name.trim()) return
     setSaving(true)
     try {
-      await saveDietLog({ ...form, date: today() })
+      await saveDietLog({ ...form, date: selectedDate })
       setForm({ food_name: '', calories: '', protein: '', carbs: '', fat: '' })
       setShowAdd(false)
-      await load()
+      await loadLogs()
     } catch { /* empty */ }
     finally { setSaving(false) }
   }
@@ -78,11 +93,35 @@ export default function Diet() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white">Nutrition</h1>
-          <p className="text-gray-400 text-sm">{formatDate(today())}</p>
-        </div>
+        <h1 className="text-xl font-bold text-white">Nutrition</h1>
         <button onClick={() => setShowGoals(true)} className="text-blue-400 text-sm">Set Goals</button>
+      </div>
+
+      {/* Date navigator */}
+      <div className="flex items-center justify-between px-1">
+        <button
+          onClick={() => setSelectedDate(offsetDate(selectedDate, -1))}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white"
+          style={{ backgroundColor: '#161b22' }}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-white">{isToday ? 'Today' : formatDate(selectedDate)}</p>
+          {!isToday && (
+            <button onClick={() => setSelectedDate(today())} className="text-xs text-blue-400 mt-0.5">
+              Back to today
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => setSelectedDate(offsetDate(selectedDate, 1))}
+          disabled={isToday}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white disabled:opacity-30"
+          style={{ backgroundColor: '#161b22' }}
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
 
       {/* Calorie overview */}
@@ -138,7 +177,9 @@ export default function Diet() {
       {/* Food log */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-white">Today's Food Log</h2>
+          <h2 className="text-sm font-semibold text-white">
+            {isToday ? "Today's Food Log" : 'Food Log'}
+          </h2>
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1 text-sm text-blue-400"
@@ -149,7 +190,9 @@ export default function Diet() {
 
         {logs.length === 0 ? (
           <Card>
-            <p className="text-center text-gray-500 text-sm py-4">No food logged yet today</p>
+            <p className="text-center text-gray-500 text-sm py-4">
+              {isToday ? 'No food logged yet today' : 'No food logged on this day'}
+            </p>
           </Card>
         ) : (
           <div className="space-y-2">
@@ -176,10 +219,11 @@ export default function Diet() {
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
           <div className="w-full max-w-lg rounded-t-3xl p-5" style={{ backgroundColor: '#161b22' }}>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-bold text-white">Log Food</h3>
               <button onClick={() => setShowAdd(false)} className="text-gray-400 text-xl">✕</button>
             </div>
+            <p className="text-xs text-gray-500 mb-4">{formatDate(selectedDate)}</p>
             <div className="space-y-3">
               {[
                 { field: 'food_name', label: 'Food Name', placeholder: 'e.g. Chicken Breast' },
